@@ -1,0 +1,19 @@
+.title {
+  border-bottom: solid aquamarine 2px;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+.oidandtime {
+  margin-top: 1rem;
+  border: solid black 1px;
+  width: 100%;
+}
+.commit {
+  border: solid black 1px;
+  width: 100%;
+}
+
+.chatglm2-6b {
+  border: solid black 1px;
+  width: 100%;
+}

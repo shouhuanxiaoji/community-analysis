@@ -1,0 +1,9 @@
+[site]
+Domain: https://gitlab.gnome.org
+
+[login]
+user: shouhuanxiaoji@gmail.com
+password: zhaozhenshibangzhu
+
+[token]
+test: ggopatPAQoirjNB3mQ79wxEyqy

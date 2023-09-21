@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>加载json</title>
+  <link rel="stylesheet" type="text/css" href="commits.css">
+</head>
+ 
+<body>
+	<div class="title">gcc 12.3.0 commits</div>
+	<div class="data"></div>
+
+<script src="https://cdn.staticfile.org/jquery/1.10.2/jquery.min.js"></script>
+<script>
+	$.ajax({
+		method: "GET",
+		url: "gcc-12.3.0-init.json",
+		dataType: "json",
+		success: function(e){
+			console.log(e['edges'])
+			var count = e['totalCount']
+			for(i = 0; i < count; i++) {
+				$(".data").append('<div class="oidandtime">commit id: ' + e['edges'][i]['node']['oid'] + ' commit date: ' + e['edges'][i]['node']['committedDate'] + '</div><div class="commit">' + e['edges'][i]['node']['message'] + '</div><div class="chatglm2-6b">' + e['edges'][i]['node']['chatglm2-6b'] + '</div>')
+			}
+		}
+	})
+</script>
+</body>
+</html>
