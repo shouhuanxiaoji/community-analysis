@@ -22,6 +22,9 @@
 # 更新逻辑：
 # 每次更新srpm列表，然后增量更新到json中
 # json与yaml比较，当软件的repo_platform为空，或值不等于github/gitlab/gnome.gitlab时删除该目标
+# 最终数据为仓库rpm包的source列表中，筛选出于yaml匹配的软件列表
+
+# pip3 install pyyaml requests
 
 import os
 import json
@@ -48,7 +51,7 @@ metadata_srpm_tmp = "metadata_srpm.txt.tmp"
 metadata_srpm = "metadata_srpm.txt"
 os.system("rm -f " + metadata_srpm + " && touch " + metadata_srpm)
 os.system("rm -f " + metadata_srpm_tmp)
-os.system("dnf repoquery --srpm --all | grep '.src' > " + metadata_srpm_tmp)
+os.system("dnf repoquery --source --all | grep '.src' > " + metadata_srpm_tmp)
 metadata_srpm_obj_tmp = open(metadata_srpm_tmp, mode = "r", buffering = -1, encoding = "UTF-8")
 metadata_srpm_obj = open(metadata_srpm, mode = "a", buffering = -1, encoding = "UTF-8")
 metadata_srpm_lines_tmp = metadata_srpm_obj_tmp.readlines()
@@ -60,7 +63,7 @@ metadata_srpm_obj_tmp.close()
 metadata_srpm_obj.close()
 
 if total_count == 0:
-    raise Exception("请检查rpm仓库配置文件或python代码，获取到0条srpm记录，请尝试手动运行 dnf repoquery --srpm --all")
+    raise Exception("请检查rpm仓库配置文件或python代码，获取到0条srpm记录，请尝试手动运行 dnf repoquery --source --all")
 
 os.system("rm -f " + metadata_srpm_tmp)
 
@@ -84,10 +87,12 @@ if not os.path.exists(json_file):
     for line in metadata_srpm_obj_lines:
         line = line.strip()
         line_obj = line.rsplit("-", 2)
+        if ":" in line_obj[1]:
+            line_obj[1] = ((line_obj[1]).split(":"))[1]
         line_data = {
             f"{line_obj[0]}": {
                 'os_name': line_obj[0],
-                'os_version': (line_obj[1]).split(":")[1],
+                'os_version': line_obj[1],
                 'repo_platform': '',
                 'repo_owner': '',
                 'repo_name': '',
@@ -95,7 +100,7 @@ if not os.path.exists(json_file):
                 'tag_oid': '',
                 'repo_branches': {},
                 'last_update_time': '',
-                'local_file': f"data/{line_obj[0]}__{(line_obj[1]).split(':')[1]}.json"               
+                'local_file': f"data/{line_obj[0]}__{line_obj[1]}.json"               
             }
         }
         ## 信息添加到json
@@ -119,12 +124,14 @@ else:
     for line in metadata_srpm_obj_lines:
         line = line.strip()
         line_obj = line.rsplit("-", 2)
+        if ":" in line_obj[1]:
+            line_obj[1] = ((line_obj[1]).split(":"))[1]
         # 每次都同步json与srpm列表
         if not line_obj[0] in (json_data["lists"]).keys():
             line_data = {
                 f"{line_obj[0]}": {
                     'os_name': line_obj[0],
-                    'os_version': (line_obj[1]).split(":")[1],
+                    'os_version': line_obj[1],
                     'repo_platform': '',
                     'repo_owner': '',
                     'repo_name': '',
@@ -132,14 +139,14 @@ else:
                     'tag_oid': '',
                     'repo_branches': {},
                     'last_update_time': '',
-                    'local_file': f"data/{line_obj[0]}__{(line_obj[1]).split(':')[1]}.json"
+                    'local_file': f"data/{line_obj[0]}__{line_obj[1]}.json"
                 }
             }
             json_data["lists"][line_obj[0]] = line_data[line_obj[0]]
 
         # 更新版本信息
-        if (line_obj[1]).split(':')[1] != json_data["lists"][line_obj[0]]["os_version"]:
-            json_data["lists"][line_obj[0]]["os_version"] = (line_obj[1]).split(':')[1]
+        if line_obj[1] != json_data["lists"][line_obj[0]]["os_version"]:
+            json_data["lists"][line_obj[0]]["os_version"] = line_obj[1]
         # 删除软件,请看yaml处理部分
 
     ## 写入文件
@@ -235,6 +242,7 @@ for srpm in json_data["lists"].copy():
 for srpm in json_data["lists"].keys():
     if not os.path.exists(json_data['lists'][srpm]['local_file']):
         os.system(f"touch {json_data['lists'][srpm]['local_file']}")
+        os.system("echo {} > " + json_data['lists'][srpm]['local_file'])
 
 json_file_new_obj.write(json.dumps(json_data))
 json_file_obj.close

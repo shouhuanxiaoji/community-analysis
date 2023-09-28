@@ -1,0 +1,1 @@
+{"develop": [{"commit_oid": "65775b1813d72b666cf6c785dfef54c67cf75019", "commit_date": "2023-09-23T21:21:39Z", "commit_message": "Add support for Python 3.12 and drop EOL 3.6 and 3.7 (#449)", "commit_author": "", "message_analysis": {"glm6b_2": [], "manual": [], "noob_engine": []}}], "gh-pages-stage": [], "kislyuk-patch-1": []}

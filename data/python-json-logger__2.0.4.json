@@ -1,0 +1,1 @@
+{"master": [{"commit_oid": "5f85723f4693c7289724fdcda84cfc0b62da74d4", "commit_date": "2023-02-28T17:40:55Z", "commit_message": "fix(JsonFormatter): type the constructor (#170)", "commit_author": "", "message_analysis": {"glm6b_2": [], "manual": [], "noob_engine": []}}]}

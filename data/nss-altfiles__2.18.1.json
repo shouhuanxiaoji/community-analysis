@@ -1,0 +1,1 @@
+{"v2.18": [{"commit_oid": "24ec2fadac80a64b243f683f1133389c3fc808c1", "commit_date": "2015-12-15T23:08:04Z", "commit_message": "Fix CVE-2014-8121\n\nCloses #3", "commit_author": "", "message_analysis": {"glm6b_2": [], "manual": [], "noob_engine": []}}]}
