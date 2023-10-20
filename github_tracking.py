@@ -2,9 +2,7 @@
 # This is a python3 module for obtaining all branches list of all repos
 # It Uses GraphQL Api for github and gitlab
 # needed these modules: requests gitpython
-# github test token1 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
-# github test token2 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
-# gitlab(gitlab.gnome.org) test token ggopatPAQoirjNB3mQ79wxEyqy
+# github test token1 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
 # 获取tag对应branch的办法是，首先找到tag对应的commit，然后找到commit所属的branch(可能有多个)
 import requests
 import json
@@ -28,7 +26,7 @@ def since_commit_date(commit_date):
   commit_date_exclude_this = commit_date_exclude_this_obj.strftime("%Y-%m-%dT%H:%M:%SZ")
   return commit_date_exclude_this
 
-token = "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"
+token = "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"
 apiurl = 'https://api.github.com/graphql'
 headers = {
   "Authorization": f"token {token}",
@@ -184,8 +182,8 @@ else:
 ###############################
 github_branches_data = {}
 
-#经过测试，阈值大于25时api返回结果有几率报错
-count_valve = 25
+#经过测试，阈值大于一定值时api返回结果有几率报错
+count_valve = 15
 # 软件数量小于阈值时，执行一次即可
 if total_count <= count_valve:
   # 获取tag对应的commit oid的查询graphql
@@ -308,6 +306,7 @@ else:
       print("get_branches_Error:", response2.text)
     time.sleep(5)
 
+# 由于输出格式有两种，因此需要统一格式
 for repo in github_branches_data.keys():
   if "target" in github_oid_data[repo]["ref"]["target"].keys():
     commit_oid = github_oid_data[repo]["ref"]["target"]["target"]["oid"]
@@ -330,7 +329,7 @@ for repo in github_branches_data.keys():
     if len(branches["node"]["target"]["history"]["edges"]) == 1:
       if branches["node"]["target"]["history"]["edges"][0]["node"]["oid"] == commit_oid:
         branch_name = branches["node"]["name"]
-        json_data['lists'][srpm]["repo_branches"][branch_name] = ""
+        json_data['lists'][srpm]["repo_branches"][branch_name] = []
 
 ###############################
 # 获取对应branch的commits信息（先循环软件，再循环分支，最后循环翻页，总计要三次循环）
@@ -349,7 +348,9 @@ for repo in github_branches_data.keys():
 #      "commit_author": ""
 #      "message_analysis": {
 #        # chatglm6b-2
-#        "glm6b_2": ["cve", "bugfix", "performance optimization", "new security features", "others"],
+#        "glm6b_2": ["cve", "bugfix", "performance-optimization", "new-security-features", "others"],
+#        # llama2-7b-chat
+#        "llama2_7b_chat": ["cve", "bugfix", "performance-optimization", "new-security-features", "others"],
 #        # 手动标记
 #        "manual": [],
 #        # 根据简单规则的判断
@@ -387,6 +388,7 @@ for repo in github_branches_data.keys():
     current_final_commit_oid = ""
     # github's order was from new date commit to old one
     # so 0 is the newest, 99 is the oldest
+    print(commits_json_data)
     if len(commits_json_data[branch]) == 0 or len(json_data['lists'][srpm]['repo_branches'][branch]) == 0:
       commit_cursor = ""
     else:
@@ -513,6 +515,7 @@ for repo in github_branches_data.keys():
       commit_data_format["commit_author"] = ""
       commit_data_format["message_analysis"] = {}
       commit_data_format["message_analysis"]["glm6b_2"] = []
+      commit_data_format["message_analysis"]["llama2_7b_chat"] = []
       commit_data_format["message_analysis"]["manual"] = []
       commit_data_format["message_analysis"]["noob_engine"] = []
       commits_data_format.append(commit_data_format)
@@ -534,45 +537,4 @@ json_file_new_obj.close()
 json_file_obj.close()
 os.system("rm -rf " + json_file)
 os.system("mv " + json_file_new + " " + json_file)
-
-###############################
-# 使用三类引擎进行commit分析
-# 结果分类："CVE fixes", "new security features", "new features other than security", "bug fixes", "performance optimization"
-###############################
-'''
-
-# using AI to analyse commit message
-AI_IP = "xxx.xxx.xxx.xxx"
-
-for i in commits_list['edges']:
-  i['node']['chatglm2-6b'] = ""
-  demo = i['node']['message']
-  demo = json.dumps(demo, ensure_ascii=False)
-
-  chat = f"""Please analyze the following paragraph and categorize it according to the following criteria: "CVE fixes", "new security features", "new features other than security", "bug fixes", "performance optimization". The paragraph can be classified into one or more categories; if none of the above categories are satisfied, or if you cannot recognize the paragraph, please output "neither". Only tell me "CVE fixes", "new security features", "new features other than security", "bug fixes", "performance optimization" or "neither":
-  {demo}
-  """
-
-  chat_data = {
-    "prompt": chat,
-    "history": []
-  }
-
-  response_ai = requests.post(
-    f"http://{AI_IP}:8000/",
-    headers = {"Content-Type": "application/json"},
-    json = chat_data
-  )
-  if response_ai.ok:
-    ai_data = response_ai.json()
-    i['node']['chatglm2-6b'] = json.dumps(ai_data['response'])
-  else:
-    i['node']['chatglm2-6b'] = json.dumps(response_ai.text)
-
-
-f = open(f"./html/gcc-12.3.0-init.json","w")
-f.write(json.dumps(commits_list))
-f.close()
-
-'''
-
+os.system("rm -rf data/*.new")

@@ -49,7 +49,8 @@ for srpm in json_data['lists'].keys():
     # 因为各种原因，未获取到branch的commits数据
     if branch == []:
       continue
-    for node in commits_json_data[branch]:
+    for node_index in range(len(commits_json_data[branch])):
+      node = commits_json_data[branch][node_index]
       message = node['commit_message']
       # noob-engine
       ################################################################################
@@ -61,15 +62,22 @@ for srpm in json_data['lists'].keys():
       performance_string = ("perform", "behavior", "improve", "raise", "optimiz")
       bugfix_string = ("bug")
       security_string = ("security")
-      # cve_string中的元素是否在 message 中
+
+      # message中是否有 CVE 相关关键字
       if any(i in cve_string for i in message):
         (node['message_analysis']['noob_engine']).append("CVE")
+      # message中是否有 性能 相关关键字
       if any(i in performance_string for i in message):
         (node['message_analysis']['noob_engine']).append("performance-optimization")
+      # message中是否有 bugfix 相关关键字
       if any(i in bugfix_string for i in message):
         (node['message_analysis']['noob_engine']).append("bugfix")
+      # message中是否有 性能 相关关键字
       if any(i in security_string for i in message):
-        (node['message_analysis']['noob_engine']).append("security-issue")
+        (node['message_analysis']['noob_engine']).append("new-security-features")
+      # 不属于以上分类，则分类为others
+      if node['message_analysis']['noob_engine'] == []:
+        (node['message_analysis']['noob_engine']).append("others")
 
       demo = json.dumps(message, ensure_ascii=False)
       print("Ask: --------------------------------")
@@ -104,8 +112,7 @@ for srpm in json_data['lists'].keys():
       chat = f"""The following are git commit messages. Please categorize them into the following categories: "Bug Fix", "Performance Optimization", "Common Vulnerabilities and Exposures", "New Feature or Functions", "Document Improvement", "CI/CD Improvement", "Test Improvement" and "Other". Your answer can only be one of these categories. If it contains the word "cve" or "ghsa", please answer "CVE". If it contains the word "fix" or "bugs", please answer "Bug Fix". If it contains the word "performance", please answer "Performance Optimization". If it contains the words "new feature" or "new function", please answer "New Feature or Functions".If it contains the words "doctest", please answer "Test Improvement" :
       {demo}
       """
-
-      glm2_chat_data = {
+      llama2_7b_chat_data = {
         "messages": [
           {
           "role": "user",
@@ -114,22 +121,28 @@ for srpm in json_data['lists'].keys():
         ]
       }
 
-      response_glm2 = requests.post(
+      response_llama2_7b_chat = requests.post(
         f"http://{chatglm2_6b_ip}:{chatglm2_6b_port}/chat",
         headers = {"Content-Type": "application/json"},
-        json = glm2_chat_data,
+        json = llama2_7b_chat_data,
       )
-      if response_glm2.ok:
-        glm2_data = response_glm2.json()
-        print(glm2_data["choices"][0]["message"]["content"])
-        # commits_json_data[branch][node]['message_analysis']['noob_engine'].append(glm2_data['response'])
+      if response_llama2_7b_chat.ok:
+        llama2_7b_chat_data = response_llama2_7b_chat.json()
+        print(llama2_7b_chat_data["choices"][0]["message"]["content"])
+        node['message_analysis']['llama2_7b_chat'].append(llama2_7b_chat_data["choices"][0]["message"]["content"])
       else:
-        print("chatglm2-6b error:" + response_glm2.text)
+        print("llama2_7b_chat error:" + response_llama2_7b_chat.text)
       # 5 items per second
       time.sleep(0.2)
+  commits_new_obj.write(json.dumps(commits_json_data))
   commits_new_obj.close()
   commits_obj.close()
-  
+  os.system("rm -f " + commit_file)
+  os.system("mv " + commit_file_new + " " + commit_file)
+
+os.system("rm -rf data/*.new")
+
+
 ###############################
 # 使用三类引擎进行commit分析
 # 结果分类："CVE fixes", "new security features", "new features other than security", "bug fixes", "performance optimization"
